@@ -126,5 +126,5 @@ https://cloud.tencent.com/developer/article/1482500
 
 •https://blog.csdn.net/clover_lily/article/details/80095580
 
-1. 句柄池
-2. 直接指针
+1. 句柄池： 对象引用t指向两个个指针，一个指向真正的对象，另一个指向T.class
+2. 直接指针: 对象引用t直接指向对象，对象里面有一个指针再指向T.class -> Hotspot采用是这种方式
