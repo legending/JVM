@@ -53,7 +53,7 @@
    >
    > ​	G1: 是当今垃圾回收技术最前沿的成果之一。早在JDK7就已加入JVM的收集器大家庭中，成为HotSpot重点发展的垃圾回收技术。同优秀的CMS垃圾回收器一样，G1也是关注最小时延的垃圾回收器，也同样适合大尺寸堆内存的垃圾收集，官方也推荐使用G1来代替选择CMS。G1最大的特点是引入分区的思路，弱化了分代的概念，合理利用垃圾收集各个周期的资源，解决了其他收集器甚至CMS的众多缺陷。
    >
-   > ​	Epsilon: 垃圾回收器控制内存分配，但是不执行任何垃圾回收工作,一旦java的堆被耗尽，jvm就直接关闭，主要用于测试，VM配置，如：-XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms100m -Xmx100m 
+   > ​	Epsilon: 垃圾回收器控制内存分配，但是不执行任何垃圾回收工作,一旦java的堆被耗尽，jvm就直接关闭，主要用于测试，java11之后才有，VM配置，如：-XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms100m -Xmx100m 
    >
    > ​	ZGC: 在java11出现的一个低延迟可扩展的垃圾收集器，目标：(1) 支持TB级堆内存(最大4T) (2) 最大GC停顿10ms (3) 对吞吐量影响最大不超过15%
    >
@@ -428,7 +428,7 @@ total = eden + 1个survivor
 
 13. 使用MAT / jhat /jvisualvm 进行dump文件分析
      https://www.cnblogs.com/baihuitestsoftware/articles/6406271.html 
-jhat -J-mx512M xxx.dump
+jhat -J-mx512M xxx.hprof
     http://192.168.17.11:7000
     拉到最后：找到对应链接
     可以使用OQL查找特定问题对象
@@ -440,7 +440,7 @@ jhat -J-mx512M xxx.dump
 1. 程序启动加入参数：
 
    > ```shell
-   > java -Djava.rmi.server.hostname=192.168.17.11 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=11111 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false XXX
+   > java -Djava.rmi.server.hostname=172.18.4.101 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=11111 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -XX:+PrintGC -Xms20M -Xmx20M T15_FullGC_Problem01
    > ```
 
 2. 如果遭遇 Local host name unknown：XXX的错误，修改/etc/hosts文件，把XXX加入进去
