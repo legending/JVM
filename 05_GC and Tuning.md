@@ -486,15 +486,45 @@ jhat -J-mx512M xxx.hprof
 
 ### GC算法的基本概念
 
+- 并发标记算法 -> remark阶段
+
+  - 难点：在标记对象的过程中，对象引用关系正在发生改变，在CMS与G1中用的都是相同的算法--三色标记算法
+
+    - 把对象分为三种颜色
+
+      白色：未标记的对象 -> remark完成后，任然是白色则会被回收
+
+      灰色：自身被标记，成员变量未标记
+
+      黑色：自身和成员均已标记完成
+
+    - 漏标：本来是可用对象，但是由于没有遍历到，被当成垃圾回收掉了
+
+      <img src="并发标记-漏标.png"  />
+
+    - 解决方法
+
+      1. incremental update一增量更新，关注引用的增加
+
+         把黑色重新标记为灰色，下次 重新扫描属 性 -> CMS采用的策略
+
+      2. SATB snapshot at the beginning -关注引用的删除
+        当B->D消失时，要把这个引用推到GC的堆栈，保证D还能被GC扫描到 -> G1采用的策略：直接扫描RSet，比较快速
+
 - CMS
+
   - 四个阶段：初始标记、并发标记、重新标记、并发清理
 
 - G1
+
+  - G1中的三种GC：YGC, MixedGC（默认堆内存占用达到45%触发，筛选回收，只回收最有价值的，不管是老年代还是年轻代）, FGC（是单线程，所以要尽量减少FGC）
+
   - Card Table
     由于做YGC时，需要扫描整个OLD区，效率非常低，所以JVM设计了CardTable， 如果一个OLD区CardTable中有对象指向Y区，就将它设为Dirty，下次扫描时，只需要扫描Dirty Card，在结构上，Card Table用BitMap来实现
+
   - YGC: Eden空间不足时触发
 
-  ​      FGC: 老年代空间不足或调用System.gc()时触发
+    FGC: 老年代空间不足或调用System.gc()时触发
 
   - CSet = Collection Set 
     一组可被回收的分区的集合。在CSet中存活的对象会在GC过程中被移动到另一个可用分区，CSet中的分区可以来自Eden空间、survivor空间、 或者老年代。CSet会占用不到整个堆空间的1%大小。
@@ -503,13 +533,20 @@ jhat -J-mx512M xxx.hprof
 
     记录了其他Region中的对象到本Region的引用，RSet的价值在于使得垃圾收集器不需要描整个堆找到谁引用了当前分区中的对象，只需要扫描RSet即可
 
+    由于RSet的存在，每次给对象赋引用的时候需要加一个<font color="red">写屏障</font>（与内存平展是两个层面的概念）
+
     `由于使用以上的这些辅助数据结构，所以会浪费很多空间，所以在ZGC中region的概念已经不存在了`
 
-  - humongous object : 超过单个region的50%
+  - humongous object : 超过单个region的50%，默认直接会被分配在老年代
 
   - 阿里多租户JVM：每个租户空间独立，session based GC (赵海平) ->专门针对WebApplication的GC
 
   - G1中新老年代的空间比例一般不用手动指定，因为这是G1预测停顿时间的基准（zulu是一个收费的jvm,只有一个参数，剩下的都是在运行中自己自动调整）
+
+- 其他
+
+  - java10以前FullGC都是串行的，之后的是并行FullGC
+  - G1，ZGC都是希望尽量减少FGC的频率，甚至不要有FGC
 
 
 
@@ -876,7 +913,7 @@ OOM产生的原因多种多样，有些程序未必产生OOM，不断FGC(CPU飙�
 
       1. 扩内存
       2. 提高CPU性能（回收的快，业务逻辑产生对象的速度固定，垃圾回收越快，内存空间越大）
-      3. 降低MixedGC触发的阈值，让MixedGC提早发生（默认是45%，最大可以达到60%）。MixedGC相当于CMS，最后筛选回收与CMS稍有不同
+      3. 降低MixedGC触发的阈值，让MixedGC提早发生（默认是45%，最大可以达到60%）。MixedGC相当于CMS，最后筛选回收与CMS稍有不同，同时MIxedGC不论是年轻代还是老年代，只要满足条件都可以回收
 
  18. 问：生产环境中能够随随便便的dump吗？
      小堆影响不大，大堆会有服务暂停或卡顿（加live可以缓解），dump前会有FGC
