@@ -1,6 +1,6 @@
 package com.legend.jvm.c0_basic;
 
-public class TestIndentityHashCode {
+public class TestIdentityHashCode {
     public static void main(String[] args) {
         Object o = new Object();
         System.out.println(o.hashCode());
